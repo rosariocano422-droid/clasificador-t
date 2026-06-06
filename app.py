@@ -24,18 +24,18 @@ st.markdown("---")
 # IMÁGENES
 # ============================================================
 imagenes_T = {
-    "T normal": [[1,1,1],[0,1,0],[0,1,0]],
+    "T normal":   [[1,1,1],[0,1,0],[0,1,0]],
     "T centrada": [[1,1,1],[0,1,0],[0,1,0]],
     "T variante": [[1,1,1],[0,1,0],[0,1,0]],
 }
 
 imagenes_NO_T = {
-    "Cruz (+)":      [[0,1,0],[1,1,1],[0,1,0]],
-    "L invertida":   [[1,0,0],[1,0,0],[1,1,1]],
-    "Diagonal":      [[1,0,0],[0,1,0],[0,0,1]],
-    "Cuadrado":      [[1,1,1],[1,0,1],[1,1,1]],
-    "Fila central":  [[0,0,0],[1,1,1],[0,0,0]],
-    "T invertida":   [[0,1,0],[0,1,0],[1,1,1]],
+    "Cruz (+)":     [[0,1,0],[1,1,1],[0,1,0]],
+    "L invertida":  [[1,0,0],[1,0,0],[1,1,1]],
+    "Diagonal":     [[1,0,0],[0,1,0],[0,0,1]],
+    "Cuadrado":     [[1,1,1],[1,0,1],[1,1,1]],
+    "Fila central": [[0,0,0],[1,1,1],[0,0,0]],
+    "T invertida":  [[0,1,0],[0,1,0],[1,1,1]],
 }
 
 # ============================================================
@@ -69,7 +69,6 @@ pesos = [
 
 st.markdown("---")
 
-# Threshold con slider Y caja numérica
 col_sl, col_num = st.columns([3, 1])
 with col_sl:
     threshold = st.slider(
@@ -95,7 +94,7 @@ st.markdown(f"""
 st.markdown("---")
 
 # ============================================================
-# FUNCIÓN DE PUNTUACIÓN Y CLASIFICACIÓN
+# FUNCIONES
 # ============================================================
 def calcular(imagen, pesos, threshold):
     puntaje = sum(imagen[i][j] * pesos[i][j] for i in range(3) for j in range(3))
@@ -103,16 +102,12 @@ def calcular(imagen, pesos, threshold):
     correcto_T = puntaje > threshold
     return puntaje, decision, correcto_T
 
-# ============================================================
-# FUNCIÓN PARA DIBUJAR CUADRÍCULA
-# ============================================================
 def dibujar(imagen, titulo, puntaje, decision, correcto):
     fig, ax = plt.subplots(figsize=(3, 3.2))
     ax.set_xlim(0, 3)
     ax.set_ylim(0, 3)
     ax.set_aspect('equal')
     ax.axis('off')
-
     for i in range(3):
         for j in range(3):
             color = '#2E75B6' if imagen[i][j] == 1 else '#F0F0F0'
@@ -124,7 +119,6 @@ def dibujar(imagen, titulo, puntaje, decision, correcto):
                     ha='center', va='center',
                     fontsize=14, fontweight='bold',
                     color='white' if imagen[i][j] == 1 else '#999999')
-
     color_titulo = '#1a7a1a' if correcto else '#cc0000'
     ax.set_title(
         f"{titulo}\nPuntaje: {puntaje:.1f}\n{decision}",
@@ -138,7 +132,6 @@ def dibujar(imagen, titulo, puntaje, decision, correcto):
 # ============================================================
 st.header("🤖 Paso 2: Clasificación automática")
 
-# Imágenes T
 st.subheader("✅ Imágenes que SÍ son T")
 cols = st.columns(3)
 aciertos_T = 0
@@ -153,7 +146,6 @@ for idx, (nombre, imagen) in enumerate(imagenes_T.items()):
 
 st.markdown("---")
 
-# Imágenes NO-T
 st.subheader("❌ Imágenes que NO son T")
 cols2 = st.columns(3)
 aciertos_NO_T = 0
@@ -190,7 +182,6 @@ with col4:
 
 st.progress(total_correctos / total)
 
-# Análisis de errores
 st.subheader("🔍 Análisis detallado")
 
 falsos_positivos = []
@@ -207,7 +198,6 @@ for nombre, imagen in imagenes_T.items():
         falsos_negativos.append((nombre, puntaje))
 
 col1, col2 = st.columns(2)
-
 with col1:
     st.markdown("**⚠️ Falsos Positivos** (NO son T pero la máquina dijo que sí)")
     if falsos_positivos:
@@ -261,7 +251,6 @@ with col2:
     st.markdown(f"**Puntaje:** `{puntaje_sel:.2f}`")
     st.markdown(f"**Umbral:** `{threshold}`")
     st.markdown(f"**Comparación:** `{puntaje_sel:.2f} {'>' if puntaje_sel > threshold else '≤'} {threshold}`")
-
     if puntaje_sel > threshold:
         st.success(f"✅ Puntaje {puntaje_sel:.2f} > {threshold} → **ES una T**")
     else:
@@ -270,47 +259,57 @@ with col2:
 st.markdown("---")
 
 # ============================================================
-# SECCIÓN 5: FRONTERA DE DECISIÓN
+# SECCIÓN 5: GRÁFICA CORREGIDA
 # ============================================================
-st.header("📈 Frontera de decisión en tiempo real")
-
-fig2, ax2 = plt.subplots(figsize=(7, 6))
-ax2.set_facecolor('#f8f9fa')
-fig2.patch.set_facecolor('#ffffff')
-
-puntajes_T = [sum(img[i][j]*pesos[i][j] for i in range(3) for j in range(3))
-              for img in imagenes_T.values()]
-puntajes_NO_T = [sum(img[i][j]*pesos[i][j] for i in range(3) for j in range(3))
-                 for img in imagenes_NO_T.values()]
+st.header("📈 Puntajes vs Umbral de Decisión")
+st.markdown("Esta gráfica muestra el puntaje de cada imagen comparado con el umbral.")
 
 nombres_T = list(imagenes_T.keys())
 nombres_NO_T = list(imagenes_NO_T.keys())
 
-x_T = list(range(len(puntajes_T)))
-x_NO_T = list(range(len(puntajes_NO_T)))
+puntajes_T = [
+    sum(img[i][j] * pesos[i][j] for i in range(3) for j in range(3))
+    for img in imagenes_T.values()
+]
+puntajes_NO_T = [
+    sum(img[i][j] * pesos[i][j] for i in range(3) for j in range(3))
+    for img in imagenes_NO_T.values()
+]
 
-ax2.bar([x - 0.2 for x in x_T], puntajes_T, 0.4,
-        label='Imágenes T', color='#2196F3', alpha=0.8)
-ax2.bar([x + 0.2 for x in x_NO_T], puntajes_NO_T, 0.4,
-        label='Imágenes NO-T', color='#f44336', alpha=0.8)
+fig2, ax2 = plt.subplots(figsize=(10, 5))
+ax2.set_facecolor('#f8f9fa')
+fig2.patch.set_facecolor('#ffffff')
+
+x_T = list(range(len(puntajes_T)))
+x_NO_T = [x + len(puntajes_T) + 1 for x in range(len(puntajes_NO_T))]
+
+barras_T = ax2.bar(x_T, puntajes_T, 0.6,
+                   label='Imágenes T', color='#2196F3', alpha=0.85)
+barras_NO_T = ax2.bar(x_NO_T, puntajes_NO_T, 0.6,
+                      label='Imágenes NO-T', color='#f44336', alpha=0.85)
 
 ax2.axhline(y=threshold, color='#ff9800', linewidth=2.5,
-            linestyle='--', label=f'Umbral = {threshold}')
+            linestyle='--', label=f'Umbral = {threshold}', zorder=5)
 
-ax2.fill_between([-0.5, max(len(puntajes_T), len(puntajes_NO_T)) - 0.5],
-                 threshold, max(max(puntajes_T), max(puntajes_NO_T)) + 2,
-                 alpha=0.1, color='green', label='Zona T')
-ax2.fill_between([-0.5, max(len(puntajes_T), len(puntajes_NO_T)) - 0.5],
-                 min(min(puntajes_T), min(puntajes_NO_T)) - 2, threshold,
-                 alpha=0.1, color='red', label='Zona NO-T')
+todos_x = x_T + x_NO_T
+todos_nombres = nombres_T + nombres_NO_T
 
-ax2.set_xticks(range(max(len(puntajes_T), len(puntajes_NO_T))))
-ax2.set_xticklabels(nombres_T[:max(len(puntajes_T), len(puntajes_NO_T))],
-                    rotation=15, ha='right', fontsize=9)
+ax2.set_xticks(todos_x)
+ax2.set_xticklabels(todos_nombres, rotation=20, ha='right', fontsize=9)
 ax2.set_ylabel('Puntaje', fontsize=11)
-ax2.set_title('Puntajes vs Umbral de Decisión', fontsize=13, fontweight='bold')
+ax2.set_title('Puntajes de cada imagen vs Umbral de Decisión',
+              fontsize=13, fontweight='bold')
 ax2.legend(fontsize=9)
-ax2.grid(True, alpha=0.3)
+ax2.grid(True, alpha=0.3, axis='y')
+
+for bar, puntaje in zip(barras_T, puntajes_T):
+    ax2.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.2,
+             f'{puntaje:.1f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
+
+for bar, puntaje in zip(barras_NO_T, puntajes_NO_T):
+    ypos = bar.get_height() + 0.2 if puntaje >= 0 else bar.get_height() - 0.8
+    ax2.text(bar.get_x() + bar.get_width()/2, ypos,
+             f'{puntaje:.1f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
 
 plt.tight_layout()
 st.pyplot(fig2)
@@ -318,3 +317,4 @@ plt.close()
 
 st.markdown("---")
 st.markdown("🎓 **Aplicación desarrollada para la asignatura: Autómatas, Gramáticas y Lenguaje - IU Digital de Antioquia**")
+
